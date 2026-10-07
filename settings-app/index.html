@@ -1,0 +1,169 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'">
+<title>Dictate</title>
+<style>
+  :root {
+    --text: #f1f1f5; --dim: #9a9aab; --faint: #6b6b7b;
+    --glass: rgba(255,255,255,.045); --glass-hi: rgba(255,255,255,.075); --line: rgba(255,255,255,.08);
+    --violet: #a78bfa; --blue: #60a5fa; --accent: linear-gradient(100deg, var(--violet), var(--blue));
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; }
+  body {
+    color: var(--text); font: 14px/1.55 "Segoe UI Variable Text", "Segoe UI", sans-serif; user-select: none;
+    display: flex; flex-direction: column; overflow: hidden;
+    background: radial-gradient(900px 340px at 15% -120px, rgba(167,139,250,.16), transparent 70%),
+                radial-gradient(700px 300px at 100% -80px, rgba(96,165,250,.10), transparent 70%),
+                rgba(16,16,22,.62);
+  }
+  ::selection { background: rgba(167,139,250,.35); }
+
+  header { height: 44px; -webkit-app-region: drag; display: flex; align-items: center; gap: 10px; padding: 0 18px; flex-shrink: 0; }
+  .logo { display: flex; gap: 2.5px; align-items: center; height: 16px; }
+  .logo i { width: 3px; border-radius: 2px; background: var(--accent); animation: bar 1.6s ease-in-out infinite; }
+  .logo i:nth-child(2) { animation-delay: -.3s } .logo i:nth-child(3) { animation-delay: -.6s } .logo i:nth-child(4) { animation-delay: -.9s } .logo i:nth-child(5) { animation-delay: -1.2s }
+  @keyframes bar { 0%,100% { height: 5px } 50% { height: 15px } }
+  header b { font-weight: 600; font-size: 13px; letter-spacing: .2px; }
+  header span.k { margin-left: 4px; font-size: 12px; color: var(--faint); }
+  kbd { font: 600 11px "Segoe UI Variable Small", sans-serif; color: var(--dim); background: var(--glass-hi); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 5px; }
+
+  .hero { padding: 14px 24px 18px; flex-shrink: 0; }
+  .hero h1 { font: 600 22px/1.25 "Segoe UI Variable Display", "Segoe UI", sans-serif; letter-spacing: -.2px; }
+  .hero p { color: var(--dim); margin-top: 4px; }
+
+  nav { margin: 0 24px; display: flex; gap: 4px; padding: 4px; background: var(--glass); border: 1px solid var(--line); border-radius: 12px; position: relative; flex-shrink: 0; }
+  nav button { flex: 1; position: relative; z-index: 1; background: none; border: 0; color: var(--dim); font-family: inherit; font-weight: 500; font-size: 13px; padding: 7px 0; border-radius: 9px; cursor: pointer; transition: color .2s; }
+  nav button:hover { color: var(--text); }
+  nav button.on { color: #fff; }
+  nav .slider { position: absolute; top: 4px; bottom: 4px; border-radius: 9px; background: linear-gradient(100deg, rgba(167,139,250,.28), rgba(96,165,250,.22)); box-shadow: inset 0 0 0 1px rgba(167,139,250,.35), 0 4px 18px rgba(124,108,240,.25); transition: left .28s cubic-bezier(.3,.8,.3,1), width .28s cubic-bezier(.3,.8,.3,1); }
+  .count { font-size: 11px; color: var(--faint); margin-left: 4px; }
+
+  main { flex: 1; overflow: auto; padding: 20px 24px 24px; }
+  main::-webkit-scrollbar { width: 10px } main::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08); border-radius: 10px; border: 3px solid transparent; background-clip: padding-box; }
+  section { display: none; } section.on { display: block; animation: in .25s ease-out; }
+  @keyframes in { from { opacity: 0; transform: translateY(6px) } }
+  .hint { color: var(--dim); font-size: 13px; margin-bottom: 14px; }
+
+  .field { display: flex; align-items: center; gap: 8px; background: var(--glass); border: 1px solid var(--line); border-radius: 14px; padding: 5px 5px 5px 14px; transition: border-color .2s, box-shadow .2s; }
+  .field:focus-within { border-color: rgba(167,139,250,.55); box-shadow: 0 0 0 4px rgba(167,139,250,.12); }
+  .field svg { flex-shrink: 0; color: var(--faint); }
+  input { flex: 1; background: none; border: 0; color: var(--text); font: inherit; outline: none; padding: 6px 0; user-select: text; }
+  input::placeholder, textarea::placeholder { color: var(--faint); }
+  .btn { border: 0; border-radius: 10px; height: 34px; padding: 0 16px; font-family: inherit; font-weight: 600; font-size: 13px; color: #fff; background: var(--accent); cursor: pointer; box-shadow: 0 4px 14px rgba(124,108,240,.35); transition: transform .1s, filter .2s; }
+  .btn:hover { filter: brightness(1.08); } .btn:active { transform: scale(.96); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; background: var(--glass); border: 1px solid var(--line); border-radius: 999px; padding: 5px 5px 5px 13px; font-size: 13.5px; transition: background .2s, border-color .2s; animation: pop .22s cubic-bezier(.3,1.4,.5,1); }
+  .chip:hover { background: var(--glass-hi); border-color: rgba(167,139,250,.35); }
+  .chip button { display: grid; place-items: center; width: 22px; height: 22px; border: 0; border-radius: 50%; background: none; color: var(--faint); cursor: pointer; transition: background .15s, color .15s; }
+  .chip button:hover { background: rgba(248,113,113,.15); color: #fca5a5; }
+  .chip.out { transition: transform .16s, opacity .16s; transform: scale(.85); opacity: 0; }
+  @keyframes pop { from { transform: scale(.8); opacity: 0 } }
+
+  .card { background: var(--glass); border: 1px solid var(--line); border-radius: 14px; transition: border-color .2s, box-shadow .2s; }
+  .card:focus-within { border-color: rgba(167,139,250,.55); box-shadow: 0 0 0 4px rgba(167,139,250,.12); }
+  textarea { display: block; width: 100%; min-height: 220px; resize: vertical; background: none; border: 0; color: var(--text); font: inherit; line-height: 1.65; padding: 14px 16px; outline: none; user-select: text; }
+  .bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px 8px 16px; border-top: 1px solid var(--line); font-size: 12px; color: var(--faint); }
+  .saved { display: inline-flex; align-items: center; gap: 6px; transition: opacity .3s; }
+  .saved::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 8px #4ade80; }
+  .saved.busy::before { background: var(--violet); box-shadow: 0 0 8px var(--violet); }
+  .label { font-size: 12px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase; color: var(--faint); margin: 22px 0 10px; }
+  .preset { background: none; border: 1px dashed rgba(255,255,255,.14); color: var(--dim); font: inherit; font-size: 13px; padding: 5px 12px; border-radius: 999px; cursor: pointer; transition: all .2s; }
+  .preset:hover { border-style: solid; border-color: rgba(167,139,250,.5); color: var(--text); background: rgba(167,139,250,.08); }
+
+  .item { position: relative; padding: 14px 16px; margin-bottom: 10px; user-select: text; animation: in .3s ease-out backwards; }
+  .item .meta { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--faint); margin-bottom: 8px; }
+  .item .raw { color: var(--dim); font-size: 13px; font-style: italic; padding-left: 10px; border-left: 2px solid rgba(255,255,255,.1); }
+  .item .final { margin-top: 10px; padding-left: 10px; border-left: 2px solid var(--violet); }
+  .empty { text-align: center; color: var(--faint); padding: 48px 0; }
+  .empty div { font-size: 26px; margin-bottom: 6px; opacity: .6; }
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; }
+  .switch { flex-shrink: 0; width: 44px; height: 26px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.08); position: relative; cursor: pointer; transition: background .25s; }
+  .switch i { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #d4d4dc; transition: transform .25s cubic-bezier(.3,1.3,.5,1), background .25s; }
+  .switch.on { background: var(--accent); border-color: transparent; box-shadow: 0 2px 12px rgba(124,108,240,.4); }
+  .switch.on i { transform: translateX(18px); background: #fff; }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+  .tile { padding: 12px 14px; display: flex; flex-direction: column; }
+  .tile span { font-size: 12px; color: var(--dim); }
+  .tile b { font: 600 22px/1.3 "Segoe UI Variable Display", "Segoe UI", sans-serif; font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .tile small, .meter small { font-size: 11.5px; color: var(--faint); }
+  .meter { padding: 14px 16px; margin-top: 12px; }
+  .meter-head { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 10px; }
+  .meter-head span:last-child { font-variant-numeric: tabular-nums; color: var(--dim); }
+  .track { height: 8px; border-radius: 99px; background: rgba(255,255,255,.07); overflow: hidden; margin-bottom: 8px; }
+  .fill { height: 100%; width: 0; border-radius: 99px; background: var(--accent); transition: width .8s cubic-bezier(.3,.8,.3,1); }
+  .chart { display: flex; align-items: flex-end; gap: 10px; height: 150px; padding: 16px 16px 10px; }
+  .col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 6px; }
+  .col .v { font-size: 10.5px; color: var(--dim); font-variant-numeric: tabular-nums; min-height: 14px; }
+  .col .b { width: 100%; max-width: 30px; border-radius: 6px 6px 3px 3px; background: var(--accent); min-height: 3px; transform-origin: bottom; animation: grow .6s cubic-bezier(.3,.8,.3,1) backwards; }
+  .col .b.zero { background: rgba(255,255,255,.08); }
+  .col .d { font-size: 11px; color: var(--faint); }
+  .col.today .d { color: var(--text); font-weight: 600; }
+  @keyframes grow { from { transform: scaleY(0) } }
+  footer { flex-shrink: 0; padding: 10px 24px 14px; font-size: 12px; color: var(--faint); text-align: center; }
+</style>
+</head>
+<body>
+  <header>
+    <span class="logo"><i></i><i></i><i></i><i></i><i></i></span><b>Dictate</b>
+  </header>
+  <div class="hero">
+    <h1>Teach it how you talk</h1>
+    <p>Tap <kbd>Right Alt</kbd> to dictate, tap again to finish. <kbd>Esc</kbd> cancels.</p>
+  </div>
+  <nav>
+    <span class="slider" id="slider"></span>
+    <button data-tab="words" class="on">Words<span class="count" id="wordCount"></span></button>
+    <button data-tab="style">Style</button>
+    <button data-tab="learned">Learned<span class="count" id="histCount"></span></button>
+    <button data-tab="usage">Usage</button>
+  </nav>
+  <main>
+    <section id="words" class="on">
+      <p class="hint">Names, jargon, and anything it keeps mishearing. Whisper listens for these and Luna spells them exactly.</p>
+      <form class="field" id="addForm">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        <input id="newWord" placeholder="Add a word or phrase…" autocomplete="off">
+        <button class="btn">Add</button>
+      </form>
+      <div class="chips" id="chips"></div>
+    </section>
+    <section id="style">
+      <p class="hint">How you want your writing to sound. Luna follows this on every dictation.</p>
+      <div class="card">
+        <textarea id="styleBox" placeholder="e.g. Casual and direct. Short sentences. No exclamation marks."></textarea>
+        <div class="bar"><span id="chars"></span><span class="saved" id="saved">Saved</span></div>
+      </div>
+      <div class="label">Quick add</div>
+      <div class="chips" id="presets" style="margin-top:0"></div>
+    </section>
+    <section id="learned">
+      <p class="hint">Your last 15 dictations. Luna studies these to match the way you talk and write.</p>
+      <div id="history"></div>
+    </section>
+    <section id="usage">
+      <div class="card toggle-row">
+        <div><b>Fast mode</b><p class="hint" style="margin:2px 0 0">1.5× quicker rewrites, but it uses your Codex limit faster.</p></div>
+        <button class="switch" id="fastSwitch" role="switch" aria-label="Fast mode"><i></i></button>
+      </div>
+      <div class="tiles">
+        <div class="card tile"><span>Dictations</span><b id="tDict">–</b><small>last 7 days</small></div>
+        <div class="card tile"><span>Tokens</span><b id="tTok">–</b><small>used by dictation</small></div>
+        <div class="card tile"><span>Share</span><b id="tShare">–</b><small>of all your Codex use</small></div>
+      </div>
+      <div class="card meter">
+        <div class="meter-head"><span>Weekly Codex limit</span><span id="weeklyText">–</span></div>
+        <div class="track"><div class="fill" id="weeklyFill"></div></div>
+        <small id="weeklyNote"></small>
+      </div>
+      <div class="label">Tokens per day</div>
+      <div class="card chart" id="chart"></div>
+    </section>
+  </main>
+  <footer>Changes apply on your next dictation. No restart needed.</footer>
+  <script src="renderer.js"></script>
+</body>
+</html>

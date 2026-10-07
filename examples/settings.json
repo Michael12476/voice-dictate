@@ -1,0 +1,8 @@
+{
+  "whisper_model": "base.en",
+  "whisper_device": "cpu",
+  "whisper_compute": "int8",
+  "codex_model": "gpt-6-luna",
+  "fast": true,
+  "phone_endpoint": false
+}
